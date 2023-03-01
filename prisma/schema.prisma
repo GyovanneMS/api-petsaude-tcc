@@ -19,40 +19,60 @@ datasource db {
 model User {
   id                 Int           @id @default(autoincrement())
   personName         String        @map("person_name")
-  userName           String        @map("user_name")
   cpf                String
+  password           String //Já tem o md5???
   rg                 String
+  email              String
+  dataNascimento     Date           @map("data_Nascimento")
   profilePhoto       String?       @map("profile_photo")
   profileBannerPhoto String?       @map("profile_banner_photo")
-  email              String
-  password           String
-  isVet              Boolean
   PhoneNumber        PhoneNumber[]
-  Pet                Pet[]
 
   addressId Int     @map("address_id")
   Address   Address @relation(fields: [addressId], references: [id])
 
-  vetInfosId Int?      @map("vet_infos_id")
-  vetInfos   VetInfos? @relation(fields: [vetInfosId], references: [id])
-
   @@map("tbl_user")
+}
+
+model Tutor{
+  id       Int  @id @default(autoincrement())
+  
+  userId   Int  @map("user_id")
+  User     User @relation(fields: [userId], references: [id])
+  
+  Pet           Pet[]
 }
 
 // ************************** VET INFOS **************************
 
 model VetInfos {
   id             Int    @id @default(autoincrement())
-  occupationArea String
-  formation      String
-  institution    String
-  crmv           String
+  biografia      String?
+  avalicao       Int
+  crmv           Int
 
   AnimalTypesVetInfos     AnimalTypesVetInfos[]
-  User                    User[]
+  PhotosVet               PhotosVet[]
+  Formation               Formation[]
   VeterinaryEspecialities VeterinarySpecialities[]
+  
+  ufId    Int   @map("uf_state_id")
+  State   State @relation(fields: [ufId], references: [id])
+  userId  Int   @map("user_id")
+  User    User  @relation(fields: [userId], references: [id])
+
 
   @@map("tbl_vet_infos")
+}
+
+model PhotosVet{
+  id            Int           @id @default(autoincrement())
+  Url           String[]
+  
+  vetInfosId    Int       @map("vet_infos_id")
+  VetInfos      VetInfos  @relations(fields: [vetInfosId], references: [id])
+  
+  @@map("tbl_photos_vet")
 }
 
 model AnimalTypesVetInfos {
@@ -65,6 +85,25 @@ model AnimalTypesVetInfos {
   animalTypes   AnimalTypes @relation(fields: [animalTypesId], references: [id])
 
   @@map("tbl_animal_type_vet_infos")
+}
+
+model Formation {
+  id             Int          @id @default(autoincrement())
+  year           Year
+  
+  universityId    Int         @map("university_id")
+  University      University  @relation(fields: [universityId], references: [id])
+  
+  @@map("tbl_formation")
+}
+
+model University{
+  id        Int        @id @default(autoincrement())
+  name      String
+  
+  Formation Formation[]
+  
+  @@map("tbl_university")
 }
 
 model VeterinarySpecialities {
@@ -98,11 +137,24 @@ model AnimalTypes {
 model PhoneNumber {
   id     Int    @id @default(autoincrement())
   number String
+  ddd    Int
 
   userId Int  @map("user_id")
   User   User @relation(fields: [userId], references: [id])
+  
+  formatPhoneId int           @map("phone_format_id")
+  FormatPhone   FormatPhone   @relation(fields: [formatPhoneId], references: [id])
 
   @@map("tbl_phone_number")
+}
+
+model FormatPhone{
+  id     Int    @id @default(autoincrement())
+  Name   String
+  
+  PhoneNumber PhoneNumber[]
+  
+  @@map("tbl_format_phone")
 }
 
 // ************************** ADDRESS **************************
@@ -117,6 +169,7 @@ model Address {
   neighborhoodId Int          @map("neighborhood_id")
   neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id])
   User           User[]
+  Universitry    University[]
 
   @@map("tbl_address")
 }
@@ -157,9 +210,11 @@ model State {
 model Pet {
   id        Int      @id @default(autoincrement())
   name      String
-  birthDate DateTime @map("birth_date")
+  birthDate Date @map("birth_date")
   photo     String?
-  microship Boolean
+  microship Int?
+  height    Double?
+  weight    Double?
 
   petSizeId Int     @map("pet_size_id")
   petSize   PetSize @relation(fields: [petSizeId], references: [id])
@@ -167,13 +222,25 @@ model Pet {
   petGenderId Int       @map("pet_gender_id")
   petGender   PetGender @relation(fields: [petGenderId], references: [id])
 
-  petSpecieId Int       @map("pet_specie_id")
-  petSpecie   PetSpecie @relation(fields: [petSpecieId], references: [id])
+  petRaceId   Int       @map("pet_race_id")
+  petRace   PetRace @relation(fields: [petRaceId], references: [id])
+  
+  petLevelAggressivenessId   Int       @map("pet_level_aggressiveness_id")
+  petLevelAggressiveness     PetLevelAggressiveness   @relation(fields: [petLevelAggressivenessId], references: [id])
 
   owner  User @relation(fields: [userId], references: [id])
   userId Int
 
   @@map("tbl_pet")
+}
+
+model petLevelAgressiceness {
+  id   Int    @id @default(autoincrement())
+  level   String
+  
+  Pet Pet[]
+  
+  @@map("tbl_pet_level_agressiveness")
 }
 
 model PetSize {
@@ -189,15 +256,27 @@ model PetGender {
   id       Int    @id @default(autoincrement())
   initials String
   name     String
+  
   Pet      Pet[]
 
   @@map("tbl_pet_gender")
 }
 
+model PetRace {
+  id   Int    @id @default(autoincrement())
+  name String
+  pet  Pet[]
+
+  petSpecieId   Int       @map("pet_specie_id")
+  petSpecie     PetSpecie @relation(fields: [petSpecieId], references: [id])
+
+  @@map("tbl_pet_race")
+}
+
 model PetSpecie {
   id   Int    @id @default(autoincrement())
   name String
-  Pet  Pet[]
+  PetRace  PetRace[]
 
   @@map("tbl_pet_specie")
 }
